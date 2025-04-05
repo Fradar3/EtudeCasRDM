@@ -1,81 +1,60 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# -----------------------------------------------------
-# 1. Données d'entrée et Constantes
-# -----------------------------------------------------
-P_kW = 8.5
-rpm = 541
-d_mm = 30
-rB_mm = 50 # Rayon Engrenage B
-rC_mm = 75 # Rayon Engrenage C
-L_AB_mm = 200
-L_BC_mm = 400
-L_CD_mm = 350
-pressure_angle_deg = 20.0 # Angle de pression supposé
-
-# --- Conversion en unités SI ---
-P = P_kW * 1000
-omega = rpm * (2 * np.pi / 60)
-d = d_mm / 1000
-rB = rB_mm / 1000
-rC = rC_mm / 1000
-L_AB = L_AB_mm / 1000
-L_BC = L_BC_mm / 1000
-L_CD = L_CD_mm / 1000
-x_A = 0.0
-x_B = L_AB
-x_C = x_B + L_BC
-x_D = x_C + L_CD
-L_total = x_D
-pressure_angle_rad = np.deg2rad(pressure_angle_deg)
+# ... (Section 1: Données et Constantes - inchangée) ...
+P_kW = 8.5; rpm = 541; d_mm = 30; rB_mm = 50; rC_mm = 75; L_AB_mm = 200; L_BC_mm = 400; L_CD_mm = 350
+P = P_kW * 1000; omega = rpm * (2 * np.pi / 60); d = d_mm / 1000; rB = rB_mm / 1000; rC = rC_mm / 1000
+L_AB = L_AB_mm / 1000; L_BC = L_BC_mm / 1000; L_CD = L_CD_mm / 1000
+x_A = 0.0; x_B = L_AB; x_C = x_B + L_BC; x_D = x_C + L_CD; L_total = x_D
 
 # -----------------------------------------------------
 # 2. Calculs Préparatoires
-#    *** INTERPRÉTATION: Engrenages droits standards en B et C ***
+#    *** INTERPRÉTATION INSPIRÉE DE H-46 (sans angle pression): ***
+#    *** Fy(label)=Ft @ C; Fz(label)=Force externe @ C = Ft @ B ***
 # -----------------------------------------------------
-# Couple transmis
 T = P / omega
 
-# --- Forces sur l'Engrenage B (Entrée Moteur) ---
-# Force tangentielle (crée le couple T)
-Ft_B = T / rB  # Supposée en +y direction
-# Force radiale (due à l'angle de pression)
-Fr_B = abs(Ft_B) * np.tan(pressure_angle_rad) # Supposée en +z direction (séparation)
+# --- Forces Tangentielles ---
+Ft_B = T / rB  # Force tangentielle nécessaire en B (+y)
+Ft_C = - T / rC # Force tangentielle nécessaire en C (-y, correspond à Fy label)
 
-# --- Forces sur l'Engrenage C (Sortie Accessoire) ---
-# Force tangentielle (s'oppose au couple T)
-Ft_C = - T / rC # Supposée en -y direction
-# Force radiale (due à l'angle de pression)
-Fr_C = - abs(Ft_C) * np.tan(pressure_angle_rad) # Supposée en -z direction (séparation)
+# --- Forces pour Flexion (Basé sur labels Fig.3 et Hypothèse) ---
+# Force en Y appliquée en C (Label Fy) = Force tangentielle en C
+Fy_bending_C = Ft_C
+# Force en Z appliquée en C (Label Fz) = Magnitude de la force tangentielle en B (Hypothèse!)
+Fz_bending_C = - abs(Ft_B) # Agit en -z selon schéma
 
+# Force radiale en B = 0 (pas d'angle pression)
+Fr_B = 0.0
 
-print("--- Calcul basé sur: Engrenages droits standards en B et C ---")
+print("--- Calcul basé sur: Fy(label)=Ft@C; Fz(label)=-Ft@B; Ft@B existe aussi ---")
 print(f"Calculs Préparatoires:")
 print(f"  Couple (T): {T:.2f} Nm")
-print(f"Forces en B: Ft_B (y) = {Ft_B:.2f} N, Fr_B (z) = {Fr_B:.2f} N")
-print(f"Forces en C: Ft_C (y) = {Ft_C:.2f} N, Fr_C (z) = {Fr_C:.2f} N")
+print(f"Forces Appliquées à l'Arbre:")
+print(f"  Force Tangentielle en B (+y): {Ft_B:.2f} N")
+print(f"  Force en C (-y) [label Fy]: {Fy_bending_C:.2f} N")
+print(f"  Force en C (-z) [label Fz]: {Fz_bending_C:.2f} N") # Force de flexion
 print("-" * 30)
 
 # -----------------------------------------------------
 # 3. Calcul des Réactions aux Paliers (A et D)
 # -----------------------------------------------------
-# --- Plan XY (Forces en Y => Réactions Ay, Dy; Moments Mz) ---
-# Ay + Dy + Ft_B + Ft_C = 0
-# (Ft_B * x_B) + (Ft_C * x_C) + (Dy * x_D) = 0
+# --- Plan XY (Forces en Y) ---
+# Ay + Dy + Ft_B + Fy_bending_C = 0
+# (Ft_B * x_B) + (Fy_bending_C * x_C) + (Dy * x_D) = 0
 A_mat_yz = np.array([[1, 1], [0, x_D]])
-B_vec_yz = np.array([[-Ft_B - Ft_C],
-                   [-(Ft_B * x_B) - (Ft_C * x_C)]])
+B_vec_yz = np.array([[-Ft_B - Fy_bending_C],
+                   [-(Ft_B * x_B) - (Fy_bending_C * x_C)]])
 sol_yz = np.linalg.solve(A_mat_yz, B_vec_yz)
 Ay = sol_yz[0, 0]
 Dy = sol_yz[1, 0]
 
-# --- Plan XZ (Forces en Z => Réactions Az, Dz; Moments My) ---
-# Az + Dz + Fr_B + Fr_C = 0
-# -(Fr_B * x_B) - (Fr_C * x_C) - (Dz * x_D) = 0
+# --- Plan XZ (Forces en Z) ---
+# Az + Dz + Fr_B + Fz_bending_C = 0  (Fr_B = 0)
+# -(Fr_B * x_B) - (Fz_bending_C * x_C) - (Dz * x_D) = 0
 A_mat_zy = np.array([[1, 1], [0, x_D]])
-B_vec_zy = np.array([[-Fr_B - Fr_C],
-                   [(Fr_B * x_B) + (Fr_C * x_C)]])
+B_vec_zy = np.array([[-Fr_B - Fz_bending_C],
+                   [(Fr_B * x_B) + (Fz_bending_C * x_C)]])
 sol_zy = np.linalg.solve(A_mat_zy, B_vec_zy)
 Az = sol_zy[0, 0]
 Dz = sol_zy[1, 0]
@@ -83,9 +62,10 @@ Dz = sol_zy[1, 0]
 print("Réactions aux paliers:")
 print(f"  Ay: {Ay:.2f} N, Dy: {Dy:.2f} N")
 print(f"  Az: {Az:.2f} N, Dz: {Dz:.2f} N")
-print(f"  Vérif Equilibre Y: {Ay + Ft_B + Ft_C + Dy:.2e} N (~0)")
-print(f"  Vérif Equilibre Z: {Az + Fr_B + Fr_C + Dz:.2e} N (~0)")
+print(f"  Vérif Equilibre Y: {Ay + Ft_B + Fy_bending_C + Dy:.2e} N (~0)")
+print(f"  Vérif Equilibre Z: {Az + Fr_B + Fz_bending_C + Dz:.2e} N (~0)")
 print("-" * 30)
+
 
 # -----------------------------------------------------
 # 4. Calcul des Efforts Internes le long de l'arbre
@@ -102,20 +82,20 @@ for i, x in enumerate(x_vals):
     Vy[i] = Ay
     Vz[i] = Az
     if x >= x_B:
-        Vy[i] += Ft_B # Force tangentielle en B
-        Vz[i] += Fr_B # Force radiale en B
+        Vy[i] += Ft_B    # Force tangentielle en B
+        Vz[i] += Fr_B    # = 0
     if x >= x_C:
-        Vy[i] += Ft_C # Force tangentielle en C
-        Vz[i] += Fr_C # Force radiale en C
+        Vy[i] += Fy_bending_C # Force Y en C
+        Vz[i] += Fz_bending_C # Force Z en C
 
     # Moments Fléchissants
     Mz[i] = Ay * x
     if x >= x_B: Mz[i] += Ft_B * (x - x_B)
-    if x >= x_C: Mz[i] += Ft_C * (x - x_C)
+    if x >= x_C: Mz[i] += Fy_bending_C * (x - x_C)
 
     My[i] = - (Az * x)
-    if x >= x_B: My[i] -= Fr_B * (x - x_B)
-    if x >= x_C: My[i] -= Fr_C * (x - x_C)
+    if x >= x_B: My[i] -= Fr_B * (x - x_B) # = 0
+    if x >= x_C: My[i] -= Fz_bending_C * (x - x_C)
 
     # Couple de Torsion
     if x > x_B and x <= x_C: Tx[i] = T
@@ -123,17 +103,18 @@ for i, x in enumerate(x_vals):
 
 M_res = np.sqrt(My**2 + Mz**2)
 
+# ... (Sections 5, 6, 7: Traçage et calcul des contraintes - inchangées) ...
+
 # -----------------------------------------------------
 # 5. Tracer les Diagrammes des Efforts Internes
 # -----------------------------------------------------
 plt.figure(figsize=(12, 10))
-
 # Vy
 plt.subplot(3, 2, 1); plt.plot(x_vals, Vy, label='Vy(x)'); plt.title('Effort Tranchant $V_y$'); plt.xlabel('Position x (m)'); plt.ylabel('$V_y$ (N)'); plt.grid(True)
-plt.axvline(x_A, color='k', linestyle='--', label='A'); plt.axvline(x_B, color='r', linestyle='--', label='B (Engr.)'); plt.axvline(x_C, color='g', linestyle='--', label='C (Engr.)'); plt.axvline(x_D, color='k', linestyle='--'); plt.legend()
+plt.axvline(x_A, color='k', linestyle='--', label='A'); plt.axvline(x_B, color='r', linestyle='--', label='B (FtB)'); plt.axvline(x_C, color='g', linestyle='--', label='C (Fy bend)'); plt.axvline(x_D, color='k', linestyle='--'); plt.legend()
 # Vz
 plt.subplot(3, 2, 2); plt.plot(x_vals, Vz, label='Vz(x)'); plt.title('Effort Tranchant $V_z$'); plt.xlabel('Position x (m)'); plt.ylabel('$V_z$ (N)'); plt.grid(True)
-plt.axvline(x_A, color='k', linestyle='--'); plt.axvline(x_B, color='r', linestyle='--'); plt.axvline(x_C, color='g', linestyle='--'); plt.axvline(x_D, color='k', linestyle='--'); plt.legend()
+plt.axvline(x_A, color='k', linestyle='--'); plt.axvline(x_B, color='r', linestyle='--'); plt.axvline(x_C, color='g', linestyle='--', label='C (Fz bend)'); plt.axvline(x_D, color='k', linestyle='--'); plt.legend()
 # Mz
 plt.subplot(3, 2, 3); plt.plot(x_vals, Mz, label='Mz(x)'); plt.title('Moment Fléchissant $M_z$'); plt.xlabel('Position x (m)'); plt.ylabel('$M_z$ (Nm)'); plt.grid(True)
 plt.axvline(x_A, color='k', linestyle='--'); plt.axvline(x_B, color='r', linestyle='--'); plt.axvline(x_C, color='g', linestyle='--'); plt.axvline(x_D, color='k', linestyle='--'); plt.legend()
@@ -188,8 +169,8 @@ if abs(T_crit) < 1e-9: print("  ATTENTION: Torsion nulle au point critique ident
 print("-" * 30)
 
 c = d / 2; I = np.pi * d**4 / 64; J = np.pi * d**4 / 32
-sigma_x_mag = M_crit * c / I # Magnitude max contrainte normale due à M_res
-tau_torsion = T_crit * c / J # Contrainte cisaillement due à T
+sigma_x_mag = M_crit * c / I
+tau_torsion = T_crit * c / J
 
 print("Contraintes au Point Critique (en surface):")
 print(f"  Sigma_x (magnitude max due à M_res): {sigma_x_mag / 1e6:.2f} MPa")
@@ -199,7 +180,7 @@ print("-" * 30)
 # -----------------------------------------------------
 # 7. Calcul des Contraintes Principales
 # -----------------------------------------------------
-sigma_x_for_principal = sigma_x_mag # Utiliser la magnitude pour le calcul des principales
+sigma_x_for_principal = sigma_x_mag
 
 if abs(tau_torsion) < 1e-9 * 1e6:
      sigma_1 = sigma_x_for_principal
