@@ -50,11 +50,13 @@ Ay = sol_yz[0, 0]
 Dy = sol_yz[1, 0]
 
 # --- Plan XZ (Forces en Z) ---
-# Az + Dz + Fr_B + Fz_bending_C = 0  (Fr_B = 0)
+# Az + Dz + Fr_B + Fz_bending_C = 0
 # -(Fr_B * x_B) - (Fz_bending_C * x_C) - (Dz * x_D) = 0
-A_mat_zy = np.array([[1, 1], [0, x_D]])
-B_vec_zy = np.array([[-Fr_B - Fz_bending_C],
-                   [(Fr_B * x_B) + (Fz_bending_C * x_C)]])
+# A_mat_zy = np.array([[1, 1], [0, x_D]]) # << ERREUR DANS LE CODE PRÉCÉDENT
+A_mat_zy = np.array([[1, 1],          # Équation 1: Coeffs de Az et Dz
+                   [0, -x_D]])       # Équation 2: Coeffs de Az (0) et Dz (-xD)
+B_vec_zy = np.array([[-Fr_B - Fz_bending_C],               # Côté droit Eq 1
+                   [(Fr_B * x_B) + (Fz_bending_C * x_C)]]) # Côté droit Eq 2
 sol_zy = np.linalg.solve(A_mat_zy, B_vec_zy)
 Az = sol_zy[0, 0]
 Dz = sol_zy[1, 0]
