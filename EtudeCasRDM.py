@@ -1,3 +1,4 @@
+from matplotlib.pylab import f
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -185,12 +186,19 @@ print(f"x = {x_crit:.3f} m, M_res = {M_crit:.2f} Nm, T = {T_crit:.2f} Nm")
 sigma_max = M_crit * c / I
 tau_torsion = T_crit * c / J
 
-sigma_eq = np.sqrt(sigma_max**2 + 3*tau_torsion**2)
+# Contraintes principales via Mohr
+sigma_1 = sigma_max / 2 + np.sqrt((sigma_max / 2)**2 + tau_torsion**2)
+sigma_2 = sigma_max / 2 - np.sqrt((sigma_max / 2)**2 + tau_torsion**2)
 
-print("\nContraintes clairement calculées:")
+# Formule du manuel (Hibbeler, équation 10-30)
+sigma_eq = np.sqrt(sigma_1**2 - sigma_1 * sigma_2 + sigma_2**2)
+
+print("\nContraintes clairement calculées (manuel Hibbeler):")
 print(f"Contrainte normale (sigma): {sigma_max/1e6:.2f} MPa")
 print(f"Contrainte de cisaillement (tau): {tau_torsion/1e6:.2f} MPa")
-print(f"Contrainte équivalente (Von Mises): {sigma_eq/1e6:.2f} MPa")
+print(f"Sigma 1 (max): {sigma_1/1e6:.2f} MPa")
+print(f"Sigma 2 (min): {sigma_2/1e6:.2f} MPa")
+print(f"Contrainte équivalente (Von Mises - Hibbeler): {sigma_eq/1e6:.2f} MPa")
 
 # -----------------------------------------------
 # Cercle de Mohr (Ajout clair)
