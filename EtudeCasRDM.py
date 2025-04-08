@@ -38,11 +38,11 @@ L_total = x_D
 # -----------------------------------------------
 # 2. Forces tangentielles
 # -----------------------------------------------
-Ft_B_y = T / rB  # Force tangentielle en B selon +Y
+Ft_B_y = -T / rB  # Force tangentielle en B selon -Y
 Ft_C_z = -T / rC  # Force tangentielle en C selon -Z
 
 print("Forces tangentielles:")
-print(f"Ft_B_y (+Y) = {Ft_B_y:.2f} N")
+print(f"Ft_B_y (-Y) = {Ft_B_y:.2f} N")
 print(f"Ft_C_z (-Z) = {Ft_C_z:.2f} N")
 
 # -----------------------------------------------
@@ -120,52 +120,66 @@ print(f"Moment résultant précis au point C (x={x_C} m): {M_res[idx_C]:.2f} Nm"
 # -----------------------------------------------
 # 5. Tracé des résultats
 # -----------------------------------------------
-plt.figure(figsize=(12, 10))
-
-plt.subplot(3, 2, 1)
+# Graphique 1 : Effort Tranchant Vy
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, Vy, label='Vy(x)')
 plt.title('Effort Tranchant Vy')
 plt.xlabel('x (m)')
 plt.ylabel('Vy (N)')
-plt.grid(); plt.legend()
+plt.grid()
+plt.legend()
+plt.show()
 
-plt.subplot(3, 2, 2)
+# Graphique 2 : Effort Tranchant Vz
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, Vz, label='Vz(x)')
 plt.title('Effort Tranchant Vz')
 plt.xlabel('x (m)')
 plt.ylabel('Vz (N)')
-plt.grid(); plt.legend()
+plt.grid()
+plt.legend()
+plt.show()
 
-plt.subplot(3, 2, 3)
+# Graphique 3 : Moment Fléchissant Mz
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, Mz, label='Mz(x)')
 plt.title('Moment Fléchissant Mz')
 plt.xlabel('x (m)')
 plt.ylabel('Mz (Nm)')
-plt.grid(); plt.legend()
+plt.grid()
+plt.legend()
+plt.show()
 
-plt.subplot(3, 2, 4)
+# Graphique 4 : Moment Fléchissant My
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, My, label='My(x)')
 plt.title('Moment Fléchissant My')
 plt.xlabel('x (m)')
 plt.ylabel('My (Nm)')
-plt.grid(); plt.legend()
+plt.grid()
+plt.legend()
+plt.show()
 
-plt.subplot(3, 2, 5)
+# Graphique 5 : Couple de Torsion Tx
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, Tx, label='T(x)')
 plt.title('Couple de Torsion Tx')
 plt.xlabel('x (m)')
 plt.ylabel('Tx (Nm)')
-plt.grid(); plt.legend()
+plt.grid()
+plt.legend()
+plt.show()
 
-plt.subplot(3, 2, 6)
+# Graphique 6 : Moment Résultant M_res
+plt.figure(figsize=(6, 4))
 plt.plot(x_vals, M_res, label='M_res(x)', color='purple')
 plt.title('Moment Résultant M_res')
 plt.xlabel('x (m)')
 plt.ylabel('M_res (Nm)')
-plt.grid(); plt.legend()
-
-plt.tight_layout()
+plt.grid()
+plt.legend()
 plt.show()
+
 
 # -----------------------------------------------
 # 6. Identification du Point Critique
