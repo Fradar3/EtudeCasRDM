@@ -36,17 +36,17 @@ x_D = x_C + L_CD
 L_total = x_D
 
 # -----------------------------------------------
-# 2. Forces tangentielles corrigées clairement
+# 2. Forces tangentielles
 # -----------------------------------------------
 Ft_B_y = T / rB  # Force tangentielle en B selon +Y
 Ft_C_z = -T / rC  # Force tangentielle en C selon -Z
 
-print("Forces corrigées clairement:")
+print("Forces tangentielles:")
 print(f"Ft_B_y (+Y) = {Ft_B_y:.2f} N")
 print(f"Ft_C_z (-Z) = {Ft_C_z:.2f} N")
 
 # -----------------------------------------------
-# 3. Équilibre statique clair (réactions A et D)
+# 3. Équilibre statique (réactions A et D)
 # -----------------------------------------------
 # Équations d'équilibre :
 # Y: Ay + Dy + Ft_B_y = 0
@@ -54,7 +54,7 @@ print(f"Ft_C_z (-Z) = {Ft_C_z:.2f} N")
 # Moments autour de A selon Z (forces en Y): Dy*(x_D) + Ft_B_y*(x_B) = 0
 # Moments autour de A selon Y (forces en Z): Dz*(x_D) + Ft_C_z*(x_C) = 0
 
-# Résolution matricielle claire
+# Résolution matricielle
 A_mat = np.array([
     [1, 1, 0, 0],
     [0, 0, 1, 1],
@@ -72,12 +72,12 @@ B_vec = np.array([
 sol = np.linalg.solve(A_mat, B_vec)
 Ay, Dy, Az, Dz = sol.flatten()
 
-print("\nRéactions aux appuis corrigées:")
+print("\nRéactions aux appuis :")
 print(f"Ay = {Ay:.2f} N, Dy = {Dy:.2f} N")
 print(f"Az = {Az:.2f} N, Dz = {Dz:.2f} N")
 
 # -----------------------------------------------
-# 4. Efforts internes clairement corrigés
+# 4. Efforts internes
 # -----------------------------------------------
 x_vals = np.linspace(0, L_total, 500)
 Vy = np.zeros_like(x_vals)
@@ -118,7 +118,7 @@ print(f"\nMoment résultant précis au point B (x={x_B} m): {M_res[idx_B]:.2f} N
 print(f"Moment résultant précis au point C (x={x_C} m): {M_res[idx_C]:.2f} Nm")
 
 # -----------------------------------------------
-# 5. Tracé clair et complet des résultats
+# 5. Tracé des résultats
 # -----------------------------------------------
 plt.figure(figsize=(12, 10))
 
@@ -168,7 +168,7 @@ plt.tight_layout()
 plt.show()
 
 # -----------------------------------------------
-# 6. Identification du Point Critique clair
+# 6. Identification du Point Critique
 # -----------------------------------------------
 idx_zone = (x_vals >= x_B) & (x_vals <= x_C)
 idx_crit = np.argmax(M_res[idx_zone])
@@ -177,7 +177,7 @@ x_crit = x_vals[idx_global]
 M_crit = M_res[idx_global]
 T_crit = Tx[idx_global]
 
-print("\nPoint critique clairement identifié :")
+print("\nPoint critique :")
 print(f"x = {x_crit:.3f} m, M_res = {M_crit:.2f} Nm, T = {T_crit:.2f} Nm")
 
 # -----------------------------------------------
@@ -193,7 +193,7 @@ sigma_2 = sigma_max / 2 - np.sqrt((sigma_max / 2)**2 + tau_torsion**2)
 # Formule du manuel (Hibbeler, équation 10-30)
 sigma_eq = np.sqrt(sigma_1**2 - sigma_1 * sigma_2 + sigma_2**2)
 
-print("\nContraintes clairement calculées (manuel Hibbeler):")
+print("\nContraintes calculées (manuel Hibbeler):")
 print(f"Contrainte normale (sigma): {sigma_max/1e6:.2f} MPa")
 print(f"Contrainte de cisaillement (tau): {tau_torsion/1e6:.2f} MPa")
 print(f"Sigma 1 (max): {sigma_1/1e6:.2f} MPa")
@@ -201,7 +201,7 @@ print(f"Sigma 2 (min): {sigma_2/1e6:.2f} MPa")
 print(f"Contrainte équivalente (Von Mises - Hibbeler): {sigma_eq/1e6:.2f} MPa")
 
 # -----------------------------------------------
-# Cercle de Mohr (Ajout clair)
+# Cercle de Mohr
 # -----------------------------------------------
 sigma_avg = sigma_max / 2
 R_mohr = np.sqrt((sigma_max / 2)**2 + tau_torsion**2)
