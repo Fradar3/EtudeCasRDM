@@ -40,11 +40,6 @@ L_total = x_D
 # -----------------------------------------------
 Ft_B_y = -T / rB  # Force tangentielle en B selon -Y
 Ft_C_z = -T / rC  # Force tangentielle en C selon -Z
-
-print("Forces tangentielles:")
-print(f"Ft_B_y (-Y) = {Ft_B_y:.2f} N")
-print(f"Ft_C_z (-Z) = {Ft_C_z:.2f} N")
-
 # -----------------------------------------------
 # 3. Équilibre statique (réactions A et D)
 # -----------------------------------------------
@@ -69,16 +64,19 @@ B_vec = np.array([
     [-(Ft_C_z * x_C)]
 ])
 
-sol = np.linalg.solve(A_mat, B_vec)
-Ay, Dy, Az, Dz = sol.flatten()
+Ay, Dy, Az, Dz = np.linalg.solve(A_mat, B_vec).flatten()
 
-print("\nRéactions aux appuis :")
+print("Réactions aux appuis :")
 print(f"Ay = {Ay:.2f} N, Dy = {Dy:.2f} N")
 print(f"Az = {Az:.2f} N, Dz = {Dz:.2f} N")
+print("Forces aux engrenages :")
+print(f"By = {Ft_B_y:.2f} N, Cz = {Ft_C_z:.2f} N")
 
 # -----------------------------------------------
 # 4. Efforts internes
 # -----------------------------------------------
+
+# Discrétisation de l'arbre
 x_vals = np.linspace(0, L_total, 500)
 Vy = np.zeros_like(x_vals)
 Vz = np.zeros_like(x_vals)
@@ -88,97 +86,61 @@ Tx = np.zeros_like(x_vals)
 
 for i, x in enumerate(x_vals):
     # Efforts tranchants
-    Vy[i] = Ay
-    Vz[i] = Az
-    if x >= x_B:
-        Vy[i] += Ft_B_y
-    if x >= x_C:
-        Vz[i] += Ft_C_z
+    Vy[i] = Ay + (Ft_B_y if x >= x_B else 0) + (Dy if x>= x_D else 0)
+    Vz[i] = Az + (Ft_C_z if x >= x_C else 0) + (Dz if x>= x_D else 0)
 
     # Moments fléchissants
-    Mz[i] = Ay * x
-    if x >= x_B:
-        Mz[i] += Ft_B_y * (x - x_B)
-
-    My[i] = -Az * x
-    if x >= x_C:
-        My[i] -= Ft_C_z * (x - x_C)
+    My[i] = Ay * x + (Ft_B_y * (x - x_B) if x >= x_B else 0)
+    Mz[i] = Az * x + (Ft_C_z * (x - x_C) if x >= x_C else 0)
 
     # Torsion
-    if x_B < x <= x_C:
-        Tx[i] = T
-    else:
-        Tx[i] = 0
+    Tx[i] = T if x_B < x <= x_C else 0
 
+# Moment résultant combiné
 M_res = np.sqrt(My**2 + Mz**2)
-idx_B = np.argmin(np.abs(x_vals - x_B))
-idx_C = np.argmin(np.abs(x_vals - x_C))
 
-print(f"\nMoment résultant précis au point B (x={x_B} m): {M_res[idx_B]:.2f} Nm")
-print(f"Moment résultant précis au point C (x={x_C} m): {M_res[idx_C]:.2f} Nm")
+# --- Ajustement pour le tracé pour commencer à zéro ---
+# L'approche ci-dessus fait que Vy[0] = Ay et Vz[0] = Az.
+# Pour que le *graphique* commence à (0,0) avant le saut de la réaction Ay/Az,
+# nous insérons un point (0,0) au début des données de tracé.
+x_plot = np.insert(x_vals, 0, 0) # Ajoute un 0 au début de x
+Vy_plot = np.insert(Vy, 0, 0)   # Ajoute un 0 au début de Vy
+Vz_plot = np.insert(Vz, 0, 0)   # Ajoute un 0 au début de Vz
+
 
 # -----------------------------------------------
 # 5. Tracé des résultats
 # -----------------------------------------------
-# Graphique 1 : Effort Tranchant Vy
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, Vy, label='Vy(x)')
-plt.title('Effort Tranchant Vy')
-plt.xlabel('x (m)')
-plt.ylabel('Vy (N)')
-plt.grid()
-plt.legend()
+
+fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+
+axes[0,0].plot(x_plot, Vy_plot)
+axes[0,0].set(title='Effort tranchant Vy', xlabel='x (m)', ylabel='Vy (N)')
+axes[0,0].grid()
+
+axes[0,1].plot(x_plot, Vz_plot)
+axes[0,1].set(title='Effort tranchant Vz', xlabel='x (m)', ylabel='Vz (N)')
+axes[0,1].grid()
+
+axes[1,0].plot(x_vals, My)
+axes[1,0].set(title='Moment fléchissant My', xlabel='x (m)', ylabel='My (Nm)')
+axes[1,0].grid()
+
+axes[1,1].plot(x_vals, Mz)
+axes[1,1].set(title='Moment fléchissant Mz', xlabel='x (m)', ylabel='Mz (Nm)')
+axes[1,1].grid()
+
+axes[2,0].plot(x_vals, Tx)
+axes[2,0].set(title='Couple de torsion Tx', xlabel='x (m)', ylabel='Tx (Nm)')
+axes[2,0].grid()
+
+axes[2,1].plot(x_vals, M_res, color='purple')
+axes[2,1].set(title='Moment résultant M_res', xlabel='x (m)', ylabel='M_res (Nm)')
+axes[2,1].grid()
+
+plt.tight_layout()
 plt.show()
 
-# Graphique 2 : Effort Tranchant Vz
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, Vz, label='Vz(x)')
-plt.title('Effort Tranchant Vz')
-plt.xlabel('x (m)')
-plt.ylabel('Vz (N)')
-plt.grid()
-plt.legend()
-plt.show()
-
-# Graphique 3 : Moment Fléchissant Mz
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, Mz, label='Mz(x)')
-plt.title('Moment Fléchissant Mz')
-plt.xlabel('x (m)')
-plt.ylabel('Mz (Nm)')
-plt.grid()
-plt.legend()
-plt.show()
-
-# Graphique 4 : Moment Fléchissant My
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, My, label='My(x)')
-plt.title('Moment Fléchissant My')
-plt.xlabel('x (m)')
-plt.ylabel('My (Nm)')
-plt.grid()
-plt.legend()
-plt.show()
-
-# Graphique 5 : Couple de Torsion Tx
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, Tx, label='T(x)')
-plt.title('Couple de Torsion Tx')
-plt.xlabel('x (m)')
-plt.ylabel('Tx (Nm)')
-plt.grid()
-plt.legend()
-plt.show()
-
-# Graphique 6 : Moment Résultant M_res
-plt.figure(figsize=(6, 4))
-plt.plot(x_vals, M_res, label='M_res(x)', color='purple')
-plt.title('Moment Résultant M_res')
-plt.xlabel('x (m)')
-plt.ylabel('M_res (Nm)')
-plt.grid()
-plt.legend()
-plt.show()
 
 
 # -----------------------------------------------
